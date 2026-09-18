@@ -8,3 +8,4 @@ def multiply(a, b): return a * b
 def divide(a, b): return a / b
 def power(a, b): return a ** b
 def modulo(a, b): return a % b
+def union(a, b): return str(a) + str(b)
