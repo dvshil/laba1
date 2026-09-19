@@ -23,4 +23,4 @@ jobs:
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          extra_args: --only-verified=false --fail
+          extra_args: --fail
