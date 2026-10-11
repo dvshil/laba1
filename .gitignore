@@ -1,2 +1,4 @@
 logs/
 *.tmp
+*.qcow2
+lab_key*
