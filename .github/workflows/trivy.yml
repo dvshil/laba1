@@ -1,0 +1,24 @@
+name: Trivy image scan
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  trivy:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build images from compose
+        run: docker compose build
+
+      - name: Scan images with Trivy
+        run: |
+          for img in laba1-backend:latest laba1-frontend:latest; do
+            echo "=== $img ==="
+            docker run --rm \
+              -v /var/run/docker.sock:/var/run/docker.sock \
+              ghcr.io/aquasecurity/trivy:0.69.3 \
+              image --severity HIGH,CRITICAL --exit-code 0 "$img"
+          done

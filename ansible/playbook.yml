@@ -1,0 +1,71 @@
+---
+- name: Deploy app to KVM VM
+  hosts: lab
+  become: true
+  vars:
+    app_dir: /opt/laba1
+
+  tasks:
+    - name: Wait for cloud-init to finish
+      ansible.builtin.command: cloud-init status --wait
+      changed_when: false
+
+    - name: Install Docker, Compose plugin and curl
+      ansible.builtin.apt:
+        name:
+          - docker.io
+          - docker-compose-v2
+          - curl
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+        lock_timeout: 300
+
+    - name: Ensure Docker is running and enabled
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Add ubuntu to docker group
+      ansible.builtin.user:
+        name: ubuntu
+        groups: docker
+        append: true
+
+    - name: Create app directory
+      ansible.builtin.file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Copy backend
+      ansible.builtin.copy:
+        src: ../backend/
+        dest: "{{ app_dir }}/backend/"
+
+    - name: Copy frontend
+      ansible.builtin.copy:
+        src: ../frontend/
+        dest: "{{ app_dir }}/frontend/"
+
+    - name: Copy compose file
+      ansible.builtin.copy:
+        src: ../compose.yaml
+        dest: "{{ app_dir }}/compose.yaml"
+
+    - name: Build and start the stack
+      community.docker.docker_compose_v2:
+        project_src: "{{ app_dir }}"
+        build: always
+        remove_orphans: true
+        state: present
+
+    - name: Wait until the app answers
+      ansible.builtin.uri:
+        url: http://localhost:8080/api/hello
+        return_content: true
+      register: app_check
+      retries: 10
+      delay: 3
+      until: app_check.status == 200
